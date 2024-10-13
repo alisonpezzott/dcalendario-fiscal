@@ -43,7 +43,7 @@ let
         each anoInicial + (if _ <= 12 then 1 else Number.IntegerDivide(_-1, 12) + 1)
     ),
     
-    trimestres = List.Transform(List.Buffer(meses), each Number.IntegerDivide(_, 4) + 1), 
+    trimestres = List.Transform(List.Buffer(meses), each Number.IntegerDivide(_ - 1, 3) + 1),
 
     semestres = List.Transform(List.Buffer(meses), each if _ <= 6 then 1 else 2), 
 
