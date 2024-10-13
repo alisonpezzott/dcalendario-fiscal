@@ -2,10 +2,10 @@ let
     #"*****Parâmetros*****" = "",
 
     // Especifique a data inicial
-    dataInicial = #date(2023, 7, 20), 
+    dataInicial = #date(2023, 12, 23), 
     
     // Quantidade da anos totais
-    qtdAnos = 3, 
+    qtdAnos = 2, 
 
     // Utilize 1 segunda ~ 7 domingo,
     inicioSemana = 1, 
@@ -14,27 +14,24 @@ let
     idioma = "pt-BR",
 
     diaInicial = Date.Day(dataInicial),
-    anoInicial = Date.Year(dataInicial),   
-    datas = List.Dates(
-        dataInicial, 
-        Duration.Days(Date.AddYears(dataInicial, qtdAnos) - dataInicial), 
-        #duration(1, 0, 0, 0)
-    ), 
+    anoInicial = Date.Year(dataInicial),
+    duracao = Duration.Days(Date.AddYears(dataInicial, qtdAnos) - dataInicial),
+    indice = {1..duracao},
+    datas = List.Dates(dataInicial,  duracao,  #duration(1, 0, 0, 0)),
 
-    // Lista dos meses totais da base acumulados quando repete o dia inicial
-    mesesIndice = List.Transform(
-        List.Buffer(datas), 
-        each List.Count(
-            List.Select(
-                List.Dates(
-                    dataInicial, 
-                    Duration.Days(_ - dataInicial) + 1, 
-                    #duration(1, 0, 0, 0)
-                ), 
-                each Date.Day(_) = diaInicial
-            )
-        )
-    ), 
+    tabela =  Table.FromColumns({indice, datas}, {"Indice", "Data"}),
+    
+    mesesIndice = Table.AddColumn(
+        tabela, 
+        "MesIndice", 
+        each List.Accumulate(
+            List.Range( tabela[Data], 0, [Indice] ),
+            0,
+            (estado, atual) => if Date.Day(atual) = diaInicial then estado + 1 else estado
+        ), 
+        Int64.Type
+    )[MesIndice], 
+
 
     meses = List.Transform(
         List.Buffer(mesesIndice), 
@@ -55,16 +52,10 @@ let
     diasDaSemana = List.Transform(datas, each Date.DayOfWeek(_, inicioSemana) + 1), 
     
     // Cria uma tabela a partir das listas dos anos e dias da semana e adiciona um índice
-    preSemanasAno = Table.AddIndexColumn(
-        Table.FromColumns(
-            { anos, diasDaSemana }, 
-            {"Ano", "DiaDaSemana"}
-        ), 
-        "Indice", 
-        1, 
-        1,
-        Int64.Type
-    ), 
+    preSemanasAno = Table.FromColumns(
+        { anos, diasDaSemana, indice }, 
+        {"Ano", "DiaDaSemana", "Indice"}
+    ),
 
     // Adiciona a coluna semana do ano, fazendo o acumulado a cada início da semana
     adicionaSemanaAno = Table.AddColumn(
@@ -141,7 +132,6 @@ let
     ),
 
     // Adicionando colunas personalizadas
-    // 
     colunasPersonalizadasAdicionadas = Table.AddColumn(
         tipagemPrimaria, 
         "ColunasPersonalizadas", 
