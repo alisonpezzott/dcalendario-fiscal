@@ -44,7 +44,7 @@ foreach (var pair in columnPairs)
 // Dicionário para associar as colunas às pastas correspondentes
 var displayFolders = new Dictionary<string, string[]>
 {
-    { "Ano Fiscal", new[] { "AnoFiscalFim", "AnoFiscalInicio"}},
+    { "Ano Fiscal", new[] { "AnoFiscal", "AnoFiscalFim", "AnoFiscalInicio"}},
     { "Bimestre Fiscal", new[] { "BimestreAnoFiscalNome", "BimestreAnoFiscalNum", "BimestreFiscalNome", "BimestreFiscalNum"}},
     { "Dia da Semana", new[] { "DiaDaSemanaNome", "DiaDaSemanaNomeAbrev", "DiaDaSemanaNum"}},
     { "Mês Fiscal", new[] { "MesAnoFiscalNome", "MesAnoFiscalNum", "MesAnoFiscalNumTexto", "MesFiscalNome", "MesFiscalNomeAbrev", "MesFiscalNum"}},
