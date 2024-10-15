@@ -20,12 +20,14 @@ let
     tbMesIndice =  Table.FromColumns({indice, data}, {"Indice", "Data"}),
     
     mesIndice = Table.AddColumn(
-        Table.Buffer(tbMesIndice), 
+        tbMesIndice, 
         "MesIndice", 
         each List.Accumulate(
-            List.Buffer(List.Range( tbMesIndice[Data], 0, [Indice] )),
+            List.Buffer(List.FirstN( tbMesIndice[Data], [Indice] )),
             0,
-            (estado, atual) => if Date.Day(atual) = diaInicial then estado + 1 else estado
+            (acumulado, atual) => if Date.Day(atual) = diaInicial 
+                then acumulado + 1 
+                else acumulado
         ), 
         Int64.Type
     )[MesIndice], 
