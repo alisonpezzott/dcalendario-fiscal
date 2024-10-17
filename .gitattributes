@@ -1,4 +1,6 @@
 # Auto detect text files and perform LF normalization
+*.pq linguist-language=Haskell
+
 # *.pq linguist-language=M
-*.pq linguist-powerquerym
-* text=auto
+# *.pq linguist-powerquerym
+# * text=auto
