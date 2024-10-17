@@ -114,16 +114,13 @@ let
                 "SemanaFiscalNum",
                 each List.Accumulate(
                     List.FirstN(indices, [DataFiscalIndice]),
-                    {0, 1},
-                    (acumulado, atual) => {
-                        anos{atual},
-                        if anos{atual} <> acumulado{0} then 1 else 
-                            if diasDaSemana{atual} = 1 then 
-                                acumulado{1} + 1
-                            else
-                                acumulado{1}
-                    } 
-                ){1},
+                    [Ano = 0, Semana = 1],
+                    (acumulado, atual) => [
+                        Ano = anos{atual},
+                        Semana =  if anos{atual} <> acumulado[Ano] then 1 else 
+                            if diasDaSemana{atual} = 1 then acumulado[Semana] + 1 else acumulado[Semana]
+                    ] 
+                )[Semana],
                 Int64.Type
             ),
     adColunasFinais = Table.AddColumn(
