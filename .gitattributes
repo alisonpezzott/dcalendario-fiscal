@@ -1,4 +1,4 @@
 # Auto detect text files and perform LF normalization
 # *.pq linguist-language=M
-*.pq linguist-vendored
+*.pq linguist-powerquerym
 * text=auto
