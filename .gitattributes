@@ -1,3 +1,4 @@
 # Auto detect text files and perform LF normalization
-*.pq linguist-language=M
+# *.pq linguist-language=M
+*.pq linguist-vendored
 * text=auto
