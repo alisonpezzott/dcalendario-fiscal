@@ -1,213 +1,146 @@
 let
-    #"*****Parâmetros*****" = "",
-
-    // Especifique a data inicial
-    dataInicial = #date(2024, 4, 1), 
-    
-    // Quantidade da anos totais
-    qtdAnos = 4, 
-
-    // Utilize 1 segunda ~ 7 domingo,
-    inicioSemana = 1, 
-
-    #"*****Não alterar abaixo*****" = "",
+    dataInicial = #date(2024, 4, 1),
+    qtdAnos = 3,
+    // 0 Domingo, 1 Segunda .. 6 Sábado
+    inicioDaSemana =  1,
+    dataFinal = Date.AddDays(Date.AddYears(dataInicial, qtdAnos), - 1),
+    diaDoInicioDoMes = Date.Day(dataInicial),
+    anoInicialBase = Date.Year(dataInicial),
     idioma = "pt-BR",
-    diaInicial = Date.Day(dataInicial),
-    anoInicial = Date.Year(dataInicial),
-    duracao = Duration.Days(Date.AddYears(dataInicial, qtdAnos) - dataInicial),
-    indice = {1..duracao},
-    data = List.Dates(dataInicial, duracao, #duration(1, 0, 0, 0)),
-    tbMesIndice =  Table.FromColumns({indice, data}, {"Indice", "Data"}),
-    
-    mesIndice = Table.AddColumn(
-        tbMesIndice, 
-        "MesIndice", 
+    totalDias = Duration.Days(dataFinal - dataInicial) + 1,
+    listaDatas = List.Dates(dataInicial, totalDias, #duration(1, 0, 0, 0)),
+    tabelaDatas = Table.FromList(listaDatas, Splitter.SplitByNothing(), type table [Data = date]),
+    adDataIndice = Table.AddIndexColumn(tabelaDatas, "DataIndice", 1, 1, Int64.Type),
+    adMesIndice = Table.AddColumn(
+        adDataIndice,
+        "MesIndice",
         each List.Accumulate(
-            List.Buffer(List.FirstN( tbMesIndice[Data], [Indice] )),
+            List.FirstN(adDataIndice[Data], [DataIndice]),
             0,
-            (acumulado, atual) => if Date.Day(atual) = diaInicial 
-                then acumulado + 1 
-                else acumulado
-        ), 
-        Int64.Type
-    )[MesIndice], 
-
-
-    mesFiscalNum = List.Transform(mesIndice, (i) => if i <= 12 then i else Number.Mod(i - 1, 12) + 1),
-    mesFiscalNome = List.Transform(mesFiscalNum, (i)=> Text.Proper(Date.MonthName(#date(anoInicial, i, 1), idioma))),
-    mesFiscalNomeAbrev = List.Transform(mesFiscalNome, (i)=> Text.Start(i, 3)), 
-
-    anoFiscalInicio = List.Transform(mesIndice, (i) => anoInicial - 1 + (if i <= 12 then 1 else Number.IntegerDivide(i-1, 12) + 1)),
-    anoFiscalFim = List.Transform(anoFiscalInicio, (i) => i + 1),
-    anoFiscal = List.Transform(List.Zip({anoFiscalInicio, anoFiscalFim}), (i) => Number.ToText(i{0}) & "/" & Number.ToText(i{1})),
-    
-    mesAnoFiscalNome = List.Transform(List.Zip({ mesFiscalNomeAbrev, anoFiscal }), (i) => i{0} & "-" & i{1}),
-    mesAnoFiscalNum = List.Transform(List.Zip({ anoFiscalFim, mesFiscalNum }), (i) => i{0} * 100 + i{1}),
-    mesAnoFiscalNumTexto = List.Transform( List.Zip({ mesFiscalNum, anoFiscal }), (i) => Number.ToText(i{0}) & "-" & i{1}),
-    
-    trimestreFiscalNum = List.Transform(mesFiscalNum, (i) => Number.IntegerDivide(i - 1, 3) + 1),
-    trimestreFiscalNome = List.Transform(trimestreFiscalNum, (i)=> "T" & Number.ToText(i)),
-    trimestreAnoFiscalNome = List.Transform(List.Zip({trimestreFiscalNome, anoFiscal}), (i)=> Text.Combine({i{0}, "-", i{1}})),
-    trimestreAnoFiscalNum = List.Transform(List.Zip({anoFiscalFim, trimestreFiscalNum}), (i)=> i{0} * 100 + i{1}),
-
-    semestreFiscalNum = List.Transform(List.Buffer(mesFiscalNum), (i) => if i <= 6 then 1 else 2),
-    semestreFiscalNome = List.Transform(semestreFiscalNum, (i) => "S" & Number.ToText(i)),
-    semestreAnoFiscalNome = List.Transform(List.Zip({semestreFiscalNome, anoFiscal}), (i)=> Text.Combine({i{0}, "-", i{1}})),
-    semestreAnoFiscalNum = List.Transform(List.Zip({anoFiscalFim, semestreFiscalNum}), (i)=> i{0} * 100 + i{1}), 
-
-    bimestreFiscalNum = List.Transform(mesFiscalNum, (i) => Number.IntegerDivide(i - 1, 2) + 1),
-    bimestreFiscalNome = List.Transform(bimestreFiscalNum, (i)=> "B" & Number.ToText(i)),
-    bimestreAnoFiscalNome = List.Transform(List.Zip({bimestreFiscalNome, anoFiscal}), (i)=> Text.Combine({i{0}, "-", i{1}})),
-    bimestreAnoFiscalNum = List.Transform(List.Zip({anoFiscalFim, bimestreFiscalNum}), (i)=> i{0} * 100 + i{1}), 
-    
-    diaDaSemanaNum = List.Transform(data, (i) => Date.DayOfWeek(i, inicioSemana) + 1),
-    diaDaSemanaNome = List.Transform(data, (i) => Text.Proper(Date.DayOfWeekName(i, idioma))),
-    diaDaSemanaNomeAbrev = List.Transform( diaDaSemanaNome, (i) =>  Text.Start(i, 3)), 
-    
-    // Cria uma tabela a partir das listas dos anos e dias da semana e adiciona um índice
-    preSemanasAno = Table.FromColumns(
-        { anoFiscal, diaDaSemanaNum, indice }, 
-        {"Ano", "DiaDaSemana", "Indice"}
-    ),
-
-    // Adiciona a coluna semana do ano, fazendo o acumulado a cada início da semana
-    adicionaSemanaAno = let tbPre = Table.Buffer(preSemanasAno) in
-        Table.AddColumn(
-        tbPre, 
-        "SemanaDoAnoN", 
-        (f)=> Table.RowCount(
-            Table.SelectRows(
-                tbPre, 
-                (d)=>
-                d[Ano] = f[Ano] and
-                d[Indice] <= f[Indice] and
-                d[DiaDaSemana] = inicioSemana
-            )
+            (acumulado, atual) => 
+                if Date.Day(atual) = diaDoInicioDoMes 
+                    then acumulado + 1 
+                    else acumulado
         ),
         Int64.Type
-    ), 
-
-    // Cria uma tabela com ajuste para somar 1 quando a primeira semana retorna 0 (zero)
-    deltaAjuste = Table.Group(
-        adicionaSemanaAno, 
-        {"Ano"}, 
-        {{
-            "Delta", 
-            each if List.Min([SemanaDoAnoN]) = 0 then 1 else 0, 
-            Int64.Type
-        }}
-    ), 
-
-    // Ajusta as semanas do ano com o delta e joga para lista
-    semanaDoAnoFiscalNum = Table.AddColumn(
-        Table.Join(adicionaSemanaAno, {"Ano"}, deltaAjuste, {"Ano"}), 
-        "SemanaDoAnoNum", 
-        each [SemanaDoAnoN] + [Delta]
-    )[SemanaDoAnoNum],
-
-    semanaDoAnoFiscalNome = List.Transform(semanaDoAnoFiscalNum, (i) => "S" & Text.PadStart(Number.ToText(i), 2, "0")),
-    semanaAnoFiscalNome = List.Transform(List.Zip({semanaDoAnoFiscalNome, anoFiscal}), (i) => i{0} & "-" & i{1}),
-    semanaAnoFiscalNum = List.Transform(List.Zip({anoFiscalFim, semanaDoAnoFiscalNum}), (i) => i{0} * 100 + i{1}),
-    
-    listasParaColunas = Table.Buffer(  Table.FromColumns(
-        {
-            data,
-            diaDaSemanaNome,
-            diaDaSemanaNomeAbrev,
-            diaDaSemanaNum,
-            anoFiscal,
-            anoFiscalInicio,
-            anoFiscalFim,
-            mesFiscalNome,
-            mesFiscalNomeAbrev,
-            mesFiscalNum,
-            mesAnoFiscalNome,
-            mesAnoFiscalNum,
-            mesAnoFiscalNumTexto,
-            semanaDoAnoFiscalNome,
-            semanaDoAnoFiscalNum,
-            semanaAnoFiscalNome,
-            semanaAnoFiscalNum,
-            trimestreFiscalNome,
-            trimestreFiscalNum,
-            trimestreAnoFiscalNome,
-            trimestreAnoFiscalNum,
-            semestreFiscalNome,
-            semestreFiscalNum,
-            semestreAnoFiscalNome,
-            semestreAnoFiscalNum,
-            bimestreFiscalNome,
-            bimestreFiscalNum,
-            bimestreAnoFiscalNome,
-            bimestreAnoFiscalNum
-        }, 
-        {
-            "Data",
-            "DiaDaSemanaNome",
-            "DiaDaSemanaNomeAbrev",
-            "DiaDaSemanaNum",
-            "AnoFiscal",
-            "AnoFiscalInicio",
-            "AnoFiscalFim",
-            "MesFiscalNome",
-            "MesFiscalNomeAbrev",
-            "MesFiscalNum",
-            "MesAnoFiscalNome",
-            "MesAnoFiscalNum",
-            "MesAnoFiscalNumTexto",
-            "SemanaDoAnoFiscalNome",
-            "SemanaDoAnoFiscalNum",
-            "SemanaAnoFiscalNome",
-            "SemanaAnoFiscalNum",
-            "TrimestreFiscalNome",
-            "TrimestreFiscalNum",
-            "TrimestreAnoFiscalNome",
-            "TrimestreAnoFiscalNum",
-            "SemestreFiscalNome",
-            "SemestreFiscalNum",
-            "SemestreAnoFiscalNome",
-            "SemestreAnoFiscalNum",
-            "BimestreFiscalNome",
-            "BimestreFiscalNum",
-            "BimestreAnoFiscalNome",
-            "BimestreAnoFiscalNum"
-        }    
-    )),
-
-    tipoAlterado = Table.TransformColumnTypes(
-        listasParaColunas,
-        {
-            {"Data", type date}, 
-            {"DiaDaSemanaNome", type text}, 
-            {"DiaDaSemanaNomeAbrev", type text}, 
-            {"DiaDaSemanaNum", Int64.Type}, 
-            {"AnoFiscal", type text}, 
-            {"MesFiscalNome", type text}, 
-            {"MesFiscalNomeAbrev", type text}, 
-            {"MesAnoFiscalNome", type text}, 
-            {"MesAnoFiscalNumTexto", type text}, 
-            {"SemanaDoAnoFiscalNome", type text}, 
-            {"SemanaAnoFiscalNome", type text}, 
-            {"TrimestreAnoFiscalNome", type text}, 
-            {"TrimestreFiscalNome", type text}, 
-            {"SemestreFiscalNome", type text}, 
-            {"SemestreAnoFiscalNome", type text}, 
-            {"BimestreFiscalNome", type text}, 
-            {"BimestreAnoFiscalNome", type text}, 
-            {"BimestreAnoFiscalNum", Int64.Type}, 
-            {"BimestreFiscalNum", Int64.Type}, 
-            {"SemestreAnoFiscalNum", Int64.Type}, 
-            {"SemestreFiscalNum", Int64.Type}, 
-            {"TrimestreAnoFiscalNum", Int64.Type}, 
-            {"TrimestreFiscalNum", Int64.Type}, 
-            {"SemanaAnoFiscalNum", Int64.Type}, 
-            {"SemanaDoAnoFiscalNum", Int64.Type}, 
-            {"MesAnoFiscalNum", Int64.Type}, 
-            {"MesFiscalNum", Int64.Type}, 
-            {"AnoFiscalFim", Int64.Type}, 
-            {"AnoFiscalInicio", Int64.Type}
-        }
+    ),
+    listaFonte = Table.ToRows(adMesIndice),
+    fxTransformaLista = (Data, DataIndice, MesIndice) =>
+        let
+            
+            diaSemanaNome = Text.Proper(Date.ToText(Data, [Format = "dddd", Culture = idioma])),
+            mesNum = if MesIndice <= 12  then MesIndice else Number.Mod(MesIndice - 1, 12) + 1,
+            mesNome = Text.Proper(Date.ToText(#date(anoInicialBase, mesNum, 1), [Format = "MMMM", Culture = idioma])),
+            mesNomeAbrev = Text.Start(mesNome, 3),
+            anoInicial = anoInicialBase - 1 + (if MesIndice <= 12 then 1 else Number.IntegerDivide(MesIndice - 1, 12) + 1),
+            anoFinal = anoInicial + 1,
+            ano = Number.ToText(anoInicial) & "/" & Number.ToText(anoFinal),
+            trimestreNum = Number.IntegerDivide(mesNum - 1, 3) + 1,
+            trimestreNome = "T" & Number.ToText(trimestreNum),
+            semestreNum = if mesNum <= 6 then 1 else 2,
+            semestreNome = "S" & Number.ToText(semestreNum),
+            bimestreNum = Number.IntegerDivide(mesNum - 1, 2) + 1,
+            bimestreNome = "B" & Number.ToText(bimestreNum)
+        in
+            {
+                DataIndice,
+                Data,
+                diaSemanaNome,
+                Text.Start(diaSemanaNome, 3),
+                Date.DayOfWeek(Data, inicioDaSemana) + 1,
+                mesNum,
+                mesNome,
+                mesNomeAbrev,
+                anoInicial * 100 + mesNum,
+                mesNomeAbrev & "-" & ano,
+                Text.PadStart(Number.ToText(mesNum), 2, "0") & "-" & ano,
+                anoInicial,
+                anoFinal,
+                ano,
+                trimestreNum,
+                trimestreNome,
+                anoInicial * 100 + trimestreNum,
+                trimestreNome & "-" & ano,
+                semestreNum,
+                semestreNome,
+                anoInicial * 100 + semestreNum,
+                semestreNome & "-" & ano,
+                bimestreNum,
+                bimestreNome,
+                anoInicial * 100 + bimestreNum,
+                bimestreNome & "-" & ano
+            },
+    tabelaSaida = #table(
+        type table [
+            DataFiscalIndice = Int64.Type,
+            DataFiscal = date,
+            DiaSemanaFiscalNome = text,
+            DiaSemanaFiscalNomeAbrev = text,
+            DiaSemanaFiscalNum = Int64.Type,
+            MesFiscalNum = Int64.Type,
+            MesFiscalNome = text,
+            MesFiscalNomeAbrev = text,
+            MesAnoFiscalNum = Int64.Type,
+            MesAnoFiscalNome = text,
+            MesAnoFiscalNumTexto = text,
+            AnoFiscalInicial = Int64.Type,
+            AnoFiscalFinal = Int64.Type,
+            AnoFiscal = text,
+            TrimestreFiscalNum = Int64.Type,
+            TrimestreFiscalNome = text,
+            TrimestreAnoFiscalNum = Int64.Type,
+            TrimestreAnoFiscalNome = text,
+            SemestreFiscalNum = Int64.Type,
+            SemestreFiscalNome = text,
+            SemestreAnoFiscalNum = Int64.Type,
+            SemestreAnoFiscalNome = text,
+            BimestreFiscalNum = Int64.Type,
+            BimestreFiscalNome = text,
+            BimestreAnoFiscalNum = Int64.Type,
+            BimestreAnoFiscalNome = text
+        ],
+        List.Transform(listaFonte, (i) => fxTransformaLista(i{0}, i{1}, i{2}))
+    ),
+    adSemanaDoAno =  
+        let 
+            tabelaBuffer = Table.Buffer( tabelaSaida[[AnoFiscalInicial], [DiaSemanaFiscalNum]] ),
+            listaColunas = List.Buffer(Table.ToColumns(tabelaBuffer)),
+            indices = List.Buffer({ 0 .. (Table.RowCount(tabelaBuffer) - 1)}),
+            anos = List.Buffer(listaColunas{0}),
+            diasDaSemana = List.Buffer(listaColunas{1})
+        in 
+            Table.AddColumn(
+                tabelaSaida,
+                "SemanaFiscalNum",
+                each List.Accumulate(
+                    List.FirstN(indices, [DataFiscalIndice]),
+                    {0, 1},
+                    (acumulado, atual) => {
+                        anos{atual},
+                        if anos{atual} <> acumulado{0} then 1 else 
+                            if diasDaSemana{atual} = 1 then 
+                                acumulado{1} + 1
+                            else
+                                acumulado{1}
+                    } 
+                ){1},
+                Int64.Type
+            ),
+    adColunasFinais = Table.AddColumn(
+        adSemanaDoAno,
+        "ColunasFinais",
+        each [
+            SemanaAnoFiscalNum = [AnoFiscalInicial] * 100 + [SemanaFiscalNum],
+            SemanaAnoFiscalNome = "S"
+                & Text.PadStart(Text.From([SemanaFiscalNum]), 2, "0")
+                & "-" & [AnoFiscal]
+        ],
+        type [SemanaAnoFiscalNum = Int64.Type, SemanaAnoFiscalNome = text]
+    ),
+    expColunasFinais = Table.ExpandRecordColumn(
+        adColunasFinais,
+        "ColunasFinais",
+        Record.FieldNames(adColunasFinais[ColunasFinais]{0})
     )
-
 in
-    tipoAlterado
+    expColunasFinais
