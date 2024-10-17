@@ -13,14 +13,13 @@ var columnPairs = new Dictionary<string, string>
 {
     {"BimestreAnoFiscalNome", "BimestreAnoFiscalNum"},
     {"BimestreFiscalNome", "BimestreFiscalNum"},
-    {"DiaDaSemanaNome", "DiaDaSemanaNum"},
-    {"DiaDaSemanaNomeAbrev", "DiaDaSemanaNum"},
+    {"DiaSemanaFiscalNome", "DiaSemanaFiscalNum"},
+    {"DiaSemanaFiscalNomeAbrev", "DiaSemanaFiscalNum"},
     {"MesAnoFiscalNome", "MesAnoFiscalNum"},
     {"MesAnoFiscalNumTexto", "MesAnoFiscalNum"},
     {"MesFiscalNome", "MesFiscalNum"},
     {"MesFiscalNomeAbrev", "MesFiscalNum"},
     {"SemanaAnoFiscalNome", "SemanaAnoFiscalNum"},
-    {"SemanaDoAnoFiscalNome", "SemanaDoAnoFiscalNum"},
     {"SemestreAnoFiscalNome", "SemestreAnoFiscalNum"},
     {"SemestreFiscalNome", "SemestreFiscalNum"},
     {"TrimestreAnoFiscalNome", "TrimestreAnoFiscalNum"},
@@ -44,11 +43,12 @@ foreach (var pair in columnPairs)
 // Dicionário para associar as colunas às pastas correspondentes
 var displayFolders = new Dictionary<string, string[]>
 {
-    { "Ano Fiscal", new[] { "AnoFiscal", "AnoFiscalFim", "AnoFiscalInicio"}},
+    { "Data Fiscal", new[] { "DataFiscal", "DataFiscalIndice" }},
+    { "Ano Fiscal", new[] { "AnoFiscal", "AnoFiscalFinal", "AnoFiscalInicial"}},
     { "Bimestre Fiscal", new[] { "BimestreAnoFiscalNome", "BimestreAnoFiscalNum", "BimestreFiscalNome", "BimestreFiscalNum"}},
-    { "Dia da Semana", new[] { "DiaDaSemanaNome", "DiaDaSemanaNomeAbrev", "DiaDaSemanaNum"}},
+    { "Dia da Semana", new[] { "DiaSemanaFiscalNome", "DiaSemanaFiscalNomeAbrev", "DiaSemanaFiscalNum"}},
     { "Mês Fiscal", new[] { "MesAnoFiscalNome", "MesAnoFiscalNum", "MesAnoFiscalNumTexto", "MesFiscalNome", "MesFiscalNomeAbrev", "MesFiscalNum"}},
-    { "Semana do Ano Fiscal", new[] { "SemanaAnoFiscalNome", "SemanaAnoFiscalNum", "SemanaDoAnoFiscalNome", "SemanaDoAnoFiscalNum"}},
+    { "Semana do Ano Fiscal", new[] { "SemanaFiscalNum", "SemanaAnoFiscalNome", "SemanaAnoFiscalNum", "SemanaAnoFiscalNome", "SemanaAnoFiscalNum"}},
     { "Semestre Fiscal", new[] { "SemestreAnoFiscalNome", "SemestreAnoFiscalNum", "SemestreFiscalNome", "SemestreFiscalNum"}},
     { "Trimestre Fiscal", new[] { "TrimestreAnoFiscalNome", "TrimestreAnoFiscalNum", "TrimestreFiscalNome", "TrimestreFiscalNum"}}
 };
@@ -76,7 +76,7 @@ foreach (var column in dcalendariofiscal.Columns)
 }
 
 // Definir o formato para as colunas do tipo Data
-var dateColumns = new[] { "Data" };  // Colunas que contêm datas
+var dateColumns = new[] { "DataFiscal" };  // Colunas que contêm datas
 foreach (var columnName in dateColumns)
 {
     var column = dcalendariofiscal.Columns[columnName];
@@ -88,4 +88,4 @@ foreach (var columnName in dateColumns)
 
 // Marcar como uma tabela de data
 dcalendariofiscal.DataCategory = "Time";
-dcalendariofiscal.Columns["Data"].IsKey = true; 
+dcalendariofiscal.Columns["DataFiscal"].IsKey = true; 
