@@ -6,7 +6,7 @@ Essa é a versão **Fiscal** com datas diferentes da civil.
 [dcalendario-fiscal.pbix](https://github.com/alisonpezzott/dcalendario-fiscal/blob/main/dcalendario-fiscal.pbix)
 
 ## Usando o código no Power Query + Script Tabular Editor
-1. Copie o código em [dcalendario-fiscal.pq](dcalendario-fiscal.pq);
+1. Copie o código em [dcalendario-fiscal.pq](https://github.com/alisonpezzott/dcalendario-fiscal/blob/main/dcaledario-fiscal.pq);
 2. No Power Query crie uma nova consulta nula;
 3. Abra o editor avançado e cole o código;
 4. Ajuste as configurações nas etapas;
